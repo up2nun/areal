@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+  client:
+    build:
+      context: ./client
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      - server
+    environment:
+      - NODE_ENV=development
+  server:
+    build:
+      context: ./server
+    ports:
+      - "127.0.0.1:5000:5000"
+    networks:
+      - postgres
+    depends_on:
+      - postgres
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:password@db:5432/mydatabase
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks:
+      - postgres
+    ports:
+      - "127.0.0.1:5432:5432"
+  nginx:
+    image: nginx
+    volumes:
+      - ./nginx/config:/etc/nginx/config
+      - ./client/dist:/usr/share/nginx/html
+    ports:
+      - "8081:80"
+    depends_on:
+      - client
+      - server
+networks:
+  postgres:
+    driver: bridge
+
+volumes:
+  postgres:
